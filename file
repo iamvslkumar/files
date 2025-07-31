@@ -1,0 +1,26 @@
+package com.example.kafka.error;
+
+import org.apache.kafka.common.errors.TopicAuthorizationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
+import org.springframework.kafka.event.ConsumerFailedToStartEvent;
+import org.springframework.stereotype.Component;
+
+@Component
+public class KafkaFatalErrorListener {
+    private static final Logger log = LoggerFactory.getLogger(KafkaFatalErrorListener.class);
+
+    @EventListener
+    public void onConsumerFailedToStart(ConsumerFailedToStartEvent event) {
+        Throwable cause = event.getThrowable();  // Works with Spring Kafka <= 3.0.x
+        while (cause != null) {
+            if (cause instanceof TopicAuthorizationException) {
+                log.error("FATAL: TopicAuthorizationException at startup: {}", cause.getMessage());
+                // Optional: System.exit(1);
+                break;
+            }
+            cause = cause.getCause();
+        }
+    }
+}
